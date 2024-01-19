@@ -37,11 +37,11 @@ Open another terminal and invoke the following command to verify if it works:
 ```shell script
 curl -w "\n" -s http://localhost:8081/api/HttpExample
 curl -w "\n" -s http://localhost:8081/api/HttpExample?name=quarkusapp
-```shell script
+```
 
 You should see the following output:
 
-```shell script
+```shell output
 Please pass a name on the query string or in the request body
 Guten Tag quarkusapp
 ```
@@ -52,17 +52,17 @@ Log in to Azure with the Azure CLI:
 
 ```shell script
 az login
-```shell script
+```
 
 Then run the following command to deploy the application to Azure Functions with Java worker:
 
 ```shell script
 mvn quarkus:deploy
-```shell script
+```
 
 You should see the following message included in the output:
 
-```shell script
+```shell output
 [INFO] [io.quarkus.azure.functions.deployment.AzureFunctionsDeployCommand]       HttpExample : https://quarkus-azure-function-011924.azurewebsites.net/api/httpexample
 ```
 
@@ -71,11 +71,11 @@ Invoke the following command to verify if it works:
 ```shell script
 curl -w "\n" -s https://quarkus-azure-function-011924.azurewebsites.net/api/httpexample
 curl -w "\n" -s https://quarkus-azure-function-011924.azurewebsites.net/api/httpexample?name=quarkusapp
-```shell script
+```
 
 You should see the following output:
 
-```shell script
+```shell output
 Please pass a name on the query string or in the request body
 Guten Tag quarkusapp
 ```
