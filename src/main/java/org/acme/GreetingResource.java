@@ -11,7 +11,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Set;
 
-@Path("/HttpExample")
+@Path("/api/HttpExample")
 public class GreetingResource {
     @Inject
     GreetingService service;
