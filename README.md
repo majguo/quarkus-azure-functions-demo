@@ -18,7 +18,7 @@ To complete this tutorial, you need:
 
 [GreetingResource.java](https://github.com/majguo/quarkus-azure-functions-demo/blob/main/src/main/java/org/acme/GreetingResource.java) is a JAX-RS resource that exposes a REST endpoint to return a greeting message. It's compiled to a native executable and deployed to Azure Functions with custom handler.
 
-## Running the app with Functions App Java worker
+## Running the Quarkus app with Functions App Java worker
 
 First of all, you leverage Quarkus maven plugin to run the app locally and remotely with Functions App Java worker.
 
@@ -88,21 +88,22 @@ Guten Tag quarkusapp
 
 ### Deploy the app to Azure Functions as a Linux container
 
-You have alraedy created a Function App with Java worker in the previous step. Now you can deploy the application as a Linux container to the existing App Service Plan.
+You have already created a Function App with Java worker in the previous step. Now you can deploy the application as a Linux container to the existing App Service Plan.
 
-First, go to [Azure Portal](https://portal.azure.com/) and you should see resource group *quarkus* is created. Go to that resource group, write down storage name for environment variables as below:
+First, go to [Azure Portal](https://portal.azure.com/) and you should see resource group *quarkus* is created. Go to that resource group, write down storage name. 
+Then switch back to the terminal where you ran the application, and define the following environment variables with the value you wrote down previously:
 
 ```shell script
 RESOURCE_GROUP_NAME=quarkus
 STORAGE_NAME=<storage account name>
 ```
 
-Next, create an Azure Container Registry (ACR) instance for storing the container image:
+Next, create an Azure Container Registry (ACR) instance with a unique name (e.g., *mjg011924acr*) for storing the container image:
 
 ```shell script
 
 ```shell script
-ACR_NAME=<your unique container registry name>
+ACR_NAME=mjg011924acr
 az acr create \
     --resource-group $RESOURCE_GROUP_NAME \
     --name $ACR_NAME \
@@ -158,10 +159,11 @@ Please pass a name on the query string or in the request body
 Guten Tag quarkusapp
 ```
 
-Finally, deploy the container image to Azure Functions:
+Switch back to the first terminal and press `Ctrl+C` to stop the container.
+Run the following commands to deploy the container image to Azure Functions:
 
 ```shell script
-PLAN_NAME=011924plan
+PLAN_NAME=mjg011924plan
 az functionapp plan create \
     --resource-group ${RESOURCE_GROUP_NAME} \
     --name ${PLAN_NAME} \
@@ -170,7 +172,7 @@ az functionapp plan create \
     --sku EP1 \
     --is-linux
 
-QUARKUS_APP_NAME=011924quarkus
+QUARKUS_APP_NAME=mjg011924quarkusimage
 az functionapp create \
     --name $QUARKUS_APP_NAME \
     --storage-account $STORAGE_NAME \
@@ -185,14 +187,14 @@ az functionapp create \
 Wait for a while until the Function App is running, then invoke the following command to verify if it works:
 
 ```shell script
-URL=$(az functionapp function show \
+QUARKUS_APP_URL=$(az functionapp function show \
     --resource-group ${RESOURCE_GROUP_NAME} \
     --name $QUARKUS_APP_NAME \
     --function-name HttpExample \
     --query invokeUrlTemplate \
     -o tsv)
-curl -w "\n" -s $URL
-curl -w "\n" -s $URL?name=quarkusapp
+curl -w "\n" -s $QUARKUS_APP_URL
+curl -w "\n" -s $QUARKUS_APP_URL?name=quarkusapp
 ```
 
 You should see the following output:
@@ -200,4 +202,174 @@ You should see the following output:
 ```shell output
 Please pass a name on the query string or in the request body
 Guten Tag quarkusapp
+```
+
+## Running the Quarkus native app with Functions App custom handler
+
+In this section, you build the Quarkus app to a native exectuable, run the native executable locally and remotely with Functions App custom handler.
+
+### Run the native app locally
+
+Build the app as a native executable:
+
+```shell script
+mvn package -Pnative -Dquarkus.native.container-build=true
+```
+
+Run the exectuable locally:
+
+```shell script
+./target/quarkus-azure-function-1.0.0-SNAPSHOT
+```
+
+Open another terminal and invoke the following command to verify if the REST endpoint defined in the JAX-RS resource returns two predefined objects:
+
+```shell script
+curl -w "\n" -s http://localhost:8080/api/HttpExample
+```
+
+You should see the following output:
+
+```shell output
+[{"name":"Apple"},{"name":"Pineapple"}]
+```
+
+Switch back to the first terminal and press `Ctrl+C` to stop the application.
+
+Copy the native executable to the directory where the deployment descriptor files for the custom handler are prepared, and run it as a Function app locally:
+
+```shell script
+cp target/quarkus-azure-function-1.0.0-SNAPSHOT quarkus-azure-function-native/
+cd quarkus-azure-function-native
+func host start -p 8081
+```
+
+Open another terminal and invoke the following command to verify if it works:
+
+```shell script
+curl -w "\n" -s http://localhost:8081/api/HttpExample
+```
+
+You should see the following output:
+
+```shell output
+[{"name":"Apple"},{"name":"Pineapple"}]
+```
+
+Switch back to the first terminal and press `Ctrl+C` to stop the application.
+
+### Deploy the native app to Azure Functions
+
+Now run the following command to create a new Azure Functions app and publish the Quarkus native app to it:
+
+```shell script
+QUARKUS_NATIVE_APP_NAME=mjg011924quarkusnative
+az functionapp create \
+    --name $QUARKUS_NATIVE_APP_NAME \
+    --storage-account $STORAGE_NAME \
+    --resource-group ${RESOURCE_GROUP_NAME} \
+    --plan ${PLAN_NAME} \
+    --os-type Linux \
+    --runtime custom
+
+func azure functionapp publish ${QUARKUS_NATIVE_APP_NAME}
+```
+
+You should see the following message included in the output:
+
+```shell output
+[INFO] [io.quarkus.azure.functions.deployment.AzureFunctionsDeployCommand]       HttpExample : https://quarkus-azure-function-011924.azurewebsites.net/api/httpexample
+```
+
+Invoke the following command to verify if it works:
+
+```shell script
+QUARKUS_NATIVE_APP_URL=$(az functionapp function show \
+    --resource-group ${RESOURCE_GROUP_NAME} \
+    --name $QUARKUS_NATIVE_APP_NAME \
+    --function-name HttpExample \
+    --query invokeUrlTemplate \
+    -o tsv | sed s/{[*]path}/HttpExample/g)
+curl -w "\n" -s $QUARKUS_NATIVE_APP_URL
+```
+
+You should see the following output:
+
+```shell output
+[{"name":"Apple"},{"name":"Pineapple"}]
+```
+
+### Deploy the native app to Azure Functions as a Linux container
+
+You have already created a Function App with custom handler in the previous step. Now you can deploy the native app as a Linux container to the existing App Service Plan.
+
+First, build and push the container image which supports custom handler to ACR:
+
+```shell script
+cd ..
+az acr build \
+    --registry ${ACR_NAME} \
+    --image azurefnquarkusnativeimage:v1.0.0 \
+    --file=Dockerfile-custom \
+    quarkus-azure-function-native
+```
+
+Pull the image and run it locally to verify if it works:
+
+```shell script
+docker run -p 8081:80 -it ${ACR_LOGIN_SERVER}/azurefnquarkusnativeimage:v1.0.0
+```
+
+Open another terminal and invoke the following command to verify if it works:
+
+```shell script
+curl -w "\n" -s http://localhost:8081/api/HttpExample
+```
+
+You should see the following output:
+
+```shell output
+[{"name":"Apple"},{"name":"Pineapple"}]
+```
+
+Switch back to the first terminal and press `Ctrl+C` to stop the container.
+Run the following commands to deploy the container image to Azure Functions:
+
+```shell script
+QUARKUS_NATIVE_APP_IMAGE_NAME=mjg011924quarkusnativeimage
+az functionapp create \
+    --name $QUARKUS_NATIVE_APP_IMAGE_NAME \
+    --storage-account $STORAGE_NAME \
+    --resource-group ${RESOURCE_GROUP_NAME} \
+    --plan ${PLAN_NAME} \
+    --image ${ACR_LOGIN_SERVER}/azurefnquarkusnativeimage:v1.0.0 \
+    --registry-username $ACR_USER_NAME \
+    --registry-password $ACR_PASSWORD \
+    --runtime custom
+```
+
+Wait for a while until the Function App is running, then invoke the following command to verify if it works:
+
+```shell script
+QUARKUS_NATIVE_APP_IMAGE_URL=$(az functionapp function show \
+    --resource-group ${RESOURCE_GROUP_NAME} \
+    --name $QUARKUS_NATIVE_APP_IMAGE_NAME \
+    --function-name HttpExample \
+    --query invokeUrlTemplate \
+    -o tsv | sed s/{[*]path}/HttpExample/g)
+curl -w "\n" -s $QUARKUS_NATIVE_APP_IMAGE_URL
+```
+
+You should see the following output:
+
+```shell output
+[{"name":"Apple"},{"name":"Pineapple"}]
+```
+
+## Clean up resources
+
+Run the following command to delete the resource group and all resources created in this tutorial:
+
+```shell script
+az group delete --name $RESOURCE_GROUP_NAME --yes --no-wait
 ```
