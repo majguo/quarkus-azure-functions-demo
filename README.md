@@ -374,11 +374,22 @@ Run the following command to delete the resource group and all resources created
 az group delete --name $RESOURCE_GROUP_NAME --yes --no-wait
 ```
 
+## References
+
+Here're some useful references:
+
+* [quarkus-azure-functions-blob](https://github.com/charlesamoreira/quarkus-azure-functions-blob): A Quarkus app that can be deployed on Azure Functions with custom handler with Blob Trigger.
+* [Azure Functions Golang Worker](https://github.com/radu-matei/azure-functions-golang-worker): A Golang worker for Azure Functions.
+* [Language Extensibility](https://github.com/Azure/azure-functions-host/wiki/Language-Extensibility): Azure Functions language extensibility options.
+* [Quickstart: Create a Java function in Azure from the command line](https://learn.microsoft.com/azure/azure-functions/create-first-function-cli-java?tabs=windows%2Cbash%2Cazure-cli%2Cbrowser)
+* [Working with containers and Azure Functions](https://learn.microsoft.com/azure/azure-functions/functions-how-to-custom-container?tabs=core-tools%2Cacr%2Cazure-cli&pivots=azure-functions)
+* [Source code to generate deployment descriptor files in Quarkus Azure Functions extension](https://github.com/quarkusio/quarkus/blob/main/extensions/azure-functions/deployment/src/main/java/io/quarkus/azure/functions/deployment/AzureFunctionsProcessor.java)
+
 ---
 
 ## Scratch notes from 2024-01-22
 
-Consider [this example](https://learn.microsoft.com/en-us/azure/azure-functions/functions-bindings-storage-blob-trigger?tabs=python-v2%2Cisolated-process%2Cnodejs-v4&pivots=programming-language-java#example). This example works in JVM mode, with the Java Worker, but does not work when compiled into native code.
+Consider this example [Azure Blob storage trigger for Azure Functions](https://learn.microsoft.com/en-us/azure/azure-functions/functions-bindings-storage-blob-trigger?tabs=python-v2%2Cisolated-process%2Cnodejs-v4&pivots=programming-language-java#example). This example works in JVM mode, with the Java Worker, but does not work when compiled into native code.
 
 ### Why does Ed think it works in JVM mode?
 
