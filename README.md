@@ -373,3 +373,24 @@ Run the following command to delete the resource group and all resources created
 ```shell script
 az group delete --name $RESOURCE_GROUP_NAME --yes --no-wait
 ```
+
+---
+
+## Scratch notes from 2024-01-22
+
+Consider [this example](https://learn.microsoft.com/en-us/azure/azure-functions/functions-bindings-storage-blob-trigger?tabs=python-v2%2Cisolated-process%2Cnodejs-v4&pivots=programming-language-java#example). This example works in JVM mode, with the Java Worker, but does not work when compiled into native code.
+
+### Why does Ed think it works in JVM mode?
+
+- The `azure-functions-maven-plugin` causes some code do be invoked that discovers the java code has contains a `@BlobTrigger` annotation and generates the binding JSON file that is somehowe consumed by the Java worker, causing the correct annotated method to be invoked in response to the blob event. I think [this code](https://github.com/microsoft/azure-maven-plugins/blob/develop/azure-toolkit-libs/azure-toolkit-appservice-lib/src/main/java/com/microsoft/azure/toolkit/lib/legacy/function/bindings/BindingEnum.java) may have something to do with it.
+
+### Why does Ed think it does not work in native mode?
+
+- There is a missing piece when going from JVM mode to native mode. When you go to native mode, you must use a [custom handler](https://learn.microsoft.com/en-us/azure/azure-functions/functions-custom-handlers). The missing piece is some kind of dispatcher that calls a rest endpoint that ultimately calls the java method with the `@BlobTrigger` annotation.
+
+### What is one way we can make it work in native mode?
+
+- We could write a proper [AnnotationProcessor](https://docs.oracle.com/en/java/javase/21/docs/api/java.compiler/javax/annotation/processing/AbstractProcessor.html) that generates
+   - the dispatcher JSON.
+   - A customer dispatcher native code, like [this](https://github.com/Azure-Samples/functions-custom-handlers/blob/d228dc00f1c95d793d23f47e2a0071308a21437b/go/GoCustomHandlers.go#L207).
+   - A Java rest endpoint that is called by the native code. When it receives the call from the native code, it invokes the java method with the `@BlobTrigger` annotation.
