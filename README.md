@@ -382,7 +382,7 @@ Consider [this example](https://learn.microsoft.com/en-us/azure/azure-functions/
 
 ### Why does Ed think it works in JVM mode?
 
-- The `azure-functions-maven-plugin` causes some code do be invoked that discovers the java code has contains a `@BlobTrigger` annotation and generates the binding JSON file that is somehowe consumed by the Java worker, causing the correct annotated method to be invoked in response to the blob event. I think [this code](https://github.com/microsoft/azure-maven-plugins/blob/develop/azure-toolkit-libs/azure-toolkit-appservice-lib/src/main/java/com/microsoft/azure/toolkit/lib/legacy/function/bindings/BindingEnum.java) may have something to do with it.
+- The `azure-functions-maven-plugin` causes some code to be invoked that discovers the java code contains a `@BlobTrigger` annotation and generates the binding JSON file that is somehow consumed by the Java worker, causing the correct annotated method to be invoked in response to the blob event. I think [this code](https://github.com/microsoft/azure-maven-plugins/blob/develop/azure-toolkit-libs/azure-toolkit-appservice-lib/src/main/java/com/microsoft/azure/toolkit/lib/legacy/function/bindings/BindingEnum.java) may have something to do with it.
 
 ### Why does Ed think it does not work in native mode?
 
